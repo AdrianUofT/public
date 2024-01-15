@@ -1,2 +1,2 @@
 # public
-TEST 1
+My public repo

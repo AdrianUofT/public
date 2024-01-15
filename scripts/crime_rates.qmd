@@ -1,0 +1,78 @@
+---
+title: "Data from opendatatoronto"
+author: "Adrian Ly"
+date: "Jan 14, 2024"
+format: html
+---
+
+```{r}
+library(knitr)
+library(janitor)
+library(lubridate)
+library(opendatatoronto)
+library(tidyverse)
+```
+
+```{r}
+crime_rates <- 
+  list_package_resources("neighbourhood-crime-rates") |>
+  # We are interested in the 2023 dataset
+  filter(name == "neighbourhood-crime-rates - 2952.csv") |>
+  # Having reduced the dataset to one row we can get the resource
+  get_resource()
+
+write_csv(
+  x = crime_rates,
+  file = "crime_rates.csv"
+)
+
+head(crime_rates)
+```
+
+```{r}
+clean_crime_rates <-
+  clean_names(crime_rates) |>
+  filter(
+    area_name == "Humber Bay Shores"
+  )|>
+  select(assault_rate_2014, assault_rate_2015, assault_rate_2016, 
+         assault_rate_2017, assault_rate_2018, assault_rate_2019,
+         assault_rate_2020, assault_rate_2021, assault_rate_2022)
+
+write_csv(
+  x = clean_crime_rates,
+  file = "cleaned_crime_rates.csv"
+)
+
+head(clean_crime_rates)
+```
+
+```{r}
+# Reshaping the data
+long_crime_rates <- clean_crime_rates |> 
+  pivot_longer(
+    cols = starts_with("assault_rate_"), 
+    names_to = "year", 
+    values_to = "assault_rate"
+  )
+
+# Cleaning up the 'year' column to retain only the year part
+long_crime_rates$year <- sub("assault_rate_", "", long_crime_rates$year)
+
+# Viewing the reshaped data
+head(long_crime_rates)
+```
+
+
+```{r}
+ggplot(long_crime_rates, aes(x = year, y = assault_rate)) +
+  geom_line(group=1) + 
+  labs(
+    title = "Assault Rates in Humber Bay Shores (2014-2022)",
+    x = "Year",
+    y = "Assault Rate"
+  ) +
+  theme_minimal()
+
+```
+
